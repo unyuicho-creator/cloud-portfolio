@@ -7,15 +7,15 @@ GitHub Actions（OIDC連携）で自動デプロイまで構築しました。
 ---
 
 flowchart LR
-  U((User))
-  CF["CloudFront (OAC)"]
-  S3["S3 (Private Bucket)"]
+  U([ User ])
+  CF[/" CloudFront (OAC) "/]
+  S3[(" S3 Private Bucket ")]
   APIGW["API Gateway (HTTP API)"]
-  LBD["Lambda (Python)"]
+  LBD[[" Lambda (Python) "]]
 
-  U --> CF
-  CF --> S3
+  U --> CF --> S3
   U --> APIGW --> LBD
+
 
 
 
