@@ -1,15 +1,12 @@
-# 🧰 Cloud Portfolio on AWS (Terraform + GitHub Actions + OIDC)
+# Cloud Portfolio (AWS / Tokyo)
+S3(非公開)+CloudFront(OAC)で静的サイト配信、API Gateway(HTTP)+Lambda(Python)でAPI公開。  
+TerraformでフルIaC、GitHub Actions + OIDCでCI/CD。
 
-このプロジェクトは、AWS 無料枠を活用して構築したクラウドポートフォリオです。  
-**S3 + CloudFront(OAC)** による静的サイト配信と、**API Gateway + Lambda** によるサーバーレスAPIをTerraformでコード化。  
-GitHub Actions（OIDC連携）で自動デプロイまで構築しました。
-
----
-
-## 🏗️ アーキテクチャ
-
+## 構成概要
 ```mermaid
 flowchart LR
-  U((User)) --> CF[CloudFront (OAC)]
+  user((User)) --> CF[CloudFront]
   CF --> S3[(S3 Private Bucket)]
-  U --> APIGW[API Gateway (HTTP API)] --> LBD[Lambda (Python)]
+  user --> APIGW[API Gateway (HTTP API)] --> LBD[Lambda (Python 3.12)]
+
+Update: least-privilege policy linked on 2025-10-15T05:33:50Z
