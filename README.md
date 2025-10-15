@@ -10,3 +10,4 @@ flowchart LR
   user --> APIGW[API Gateway (HTTP API)] --> LBD[Lambda (Python 3.12)]
 
 Update: least-privilege policy linked on 2025-10-15T05:33:50Z
+
