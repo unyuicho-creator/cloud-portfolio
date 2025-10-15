@@ -1,7 +1,7 @@
 variable "project_name" {}
-variable "lambda_zip_path" {}
+variable "lambda_source_dir" {}
 
-# IAMロール Assume ポリシー
+# Lambda 実行ロール
 data "aws_iam_policy_document" "lambda_assume" {
   statement {
     actions = ["sts:AssumeRole"]
@@ -11,6 +11,14 @@ data "aws_iam_policy_document" "lambda_assume" {
     }
   }
 }
+
+resource "aws_cloudwatch_log_group" "api_access" {
+  name              = "/aws/apigw/${aws_apigatewayv2_api.http.name}/access"
+  retention_in_days = 7
+}
+
+
+
 
 resource "aws_iam_role" "lambda_exec" {
   name               = "${var.project_name}-lambda-exec"
@@ -22,24 +30,26 @@ resource "aws_iam_role_policy_attachment" "basic" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
+# ZIP を Terraform で自動生成（ローカルzip依存を廃止）
+data "archive_file" "lambda_zip" {
+  type        = "zip"
+  source_dir  = var.lambda_source_dir
+  output_path = "${path.module}/lambda_build.zip"
+}
+
 resource "aws_lambda_function" "hello" {
   function_name    = "${var.project_name}-hello"
   handler          = "lambda_function.lambda_handler"
   runtime          = "python3.12"
   role             = aws_iam_role.lambda_exec.arn
-  filename         = var.lambda_zip_path
-  source_code_hash = filebase64sha256(var.lambda_zip_path)
+  filename         = data.archive_file.lambda_zip.output_path
+  source_code_hash = filebase64sha256(data.archive_file.lambda_zip.output_path)
 }
 
+# HTTP API (API Gateway v2)
 resource "aws_apigatewayv2_api" "http" {
-  name          = "${var.project_name}-http"
+  name          = "${var.project_name}-api"
   protocol_type = "HTTP"
-}
-
-# API アクセスログ用 LogGroup（保持7日）
-resource "aws_cloudwatch_log_group" "api_access" {
-  name              = "/aws/apigw/${aws_apigatewayv2_api.http.name}/access"
-  retention_in_days = 7
 }
 
 resource "aws_apigatewayv2_integration" "lambda" {
@@ -74,10 +84,9 @@ resource "aws_apigatewayv2_stage" "prod" {
       path        = "$context.path"
     })
   }
-
-  depends_on = [aws_cloudwatch_log_group.api_access]
 }
 
+# API → Lambda 呼び出し権限
 resource "aws_lambda_permission" "allow_apigw" {
   statement_id  = "AllowInvoke"
   action        = "lambda:InvokeFunction"

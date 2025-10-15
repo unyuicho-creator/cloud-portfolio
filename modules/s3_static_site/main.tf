@@ -6,7 +6,6 @@ data "aws_caller_identity" "current" {}
 
 resource "aws_s3_bucket" "site" {
   bucket = "${var.project_name}-static-${data.aws_caller_identity.current.account_id}"
-  # force_destroy = true  # 片付けを楽にしたい場合は有効化
 }
 
 resource "aws_s3_bucket_ownership_controls" "site" {
@@ -54,9 +53,7 @@ resource "aws_cloudfront_distribution" "site" {
     viewer_protocol_policy = "redirect-to-https"
     forwarded_values {
       query_string = false
-      cookies {
-        forward = "none"
-      }
+      cookies { forward = "none" }
     }
   }
 
@@ -65,13 +62,9 @@ resource "aws_cloudfront_distribution" "site" {
       restriction_type = "none"
     }
   }
-
-  viewer_certificate {
-    cloudfront_default_certificate = true
-  }
+  viewer_certificate { cloudfront_default_certificate = true }
 }
 
-# S3 を CloudFront(OAC) だけに公開
 data "aws_iam_policy_document" "site" {
   statement {
     actions   = ["s3:GetObject"]
