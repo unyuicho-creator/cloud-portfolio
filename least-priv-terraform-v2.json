@@ -1,0 +1,68 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    { "Effect": "Allow",
+      "Action": ["s3:ListBucket","s3:GetBucketLocation","s3:GetObject","s3:PutObject","s3:DeleteObject","s3:AbortMultipartUpload"],
+      "Resource": [
+        "arn:aws:s3:::tfstate-249896948893-ap-northeast-1",
+        "arn:aws:s3:::tfstate-249896948893-ap-northeast-1/*"
+      ]
+    },
+    { "Effect": "Allow",
+      "Action": ["dynamodb:DescribeTable","dynamodb:GetItem","dynamodb:PutItem","dynamodb:DeleteItem"],
+      "Resource": "arn:aws:dynamodb:ap-northeast-1:249896948893:table/tf-locks"
+    },
+    { "Effect": "Allow",
+      "Action": [
+        "s3:CreateBucket","s3:DeleteBucket","s3:PutBucketPolicy",
+        "s3:PutBucketPublicAccessBlock","s3:PutBucketOwnershipControls",
+        "s3:GetBucketPolicy","s3:ListBucket","s3:PutObject","s3:DeleteObject","s3:GetObject"
+      ],
+      "Resource": [
+        "arn:aws:s3:::cloud-portfolio-static-249896948893",
+        "arn:aws:s3:::cloud-portfolio-static-249896948893/*"
+      ]
+    },
+    { "Effect": "Allow",
+      "Action": [
+        "cloudfront:CreateDistribution","cloudfront:UpdateDistribution","cloudfront:DeleteDistribution",
+        "cloudfront:GetDistribution","cloudfront:GetDistributionConfig",
+        "cloudfront:CreateOriginAccessControl","cloudfront:UpdateOriginAccessControl","cloudfront:DeleteOriginAccessControl",
+        "cloudfront:GetOriginAccessControl","cloudfront:ListOriginAccessControls","cloudfront:TagResource","cloudfront:UntagResource"
+      ],
+      "Resource": "*"
+    },
+    { "Effect": "Allow",
+      "Action": [
+        "iam:CreateRole","iam:DeleteRole","iam:AttachRolePolicy","iam:DetachRolePolicy",
+        "iam:PutRolePolicy","iam:DeleteRolePolicy","iam:TagRole","iam:UntagRole",
+        "iam:GetRole","iam:ListRolePolicies","iam:ListAttachedRolePolicies","iam:GetRolePolicy"
+      ],
+      "Resource": "arn:aws:iam::249896948893:role/cloud-portfolio-lambda-exec"
+    },
+    { "Effect": "Allow",
+      "Action": ["iam:PassRole"],
+      "Resource": "arn:aws:iam::249896948893:role/cloud-portfolio-lambda-exec",
+      "Condition": { "StringEquals": { "iam:PassedToService": "lambda.amazonaws.com" } }
+    },
+    { "Effect": "Allow",
+      "Action": [
+        "lambda:CreateFunction","lambda:UpdateFunctionCode","lambda:UpdateFunctionConfiguration",
+        "lambda:DeleteFunction","lambda:GetFunction","lambda:TagResource","lambda:UntagResource",
+        "lambda:AddPermission","lambda:RemovePermission"
+      ],
+      "Resource": "arn:aws:lambda:ap-northeast-1:249896948893:function:cloud-portfolio-hello"
+    },
+    { "Effect": "Allow",
+      "Action": ["apigateway:GET","apigateway:POST","apigateway:PUT","apigateway:PATCH","apigateway:DELETE"],
+      "Resource": "arn:aws:apigateway:ap-northeast-1::/apis*"
+    },
+    { "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogGroup","logs:CreateLogStream","logs:PutRetentionPolicy","logs:DeleteLogGroup",
+        "logs:DescribeLogGroups","logs:TagResource","logs:UntagResource"
+      ],
+      "Resource": "arn:aws:logs:ap-northeast-1:249896948893:log-group:/aws/*"
+    }
+  ]
+}
