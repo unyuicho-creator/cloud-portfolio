@@ -6,17 +6,17 @@ GitHub Actions（OIDC連携）で自動デプロイまで構築しました。
 
 ---
 
-```mermaid
 flowchart LR
-    U((User))
-    CF[CloudFront (OAC)]
-    S3[(S3 Private Bucket)]
-    APIGW[API Gateway (HTTP API)]
-    LBD[Lambda (Python)]
+  U((User))
+  CF["CloudFront (OAC)"]
+  S3["S3 (Private Bucket)"]
+  APIGW["API Gateway (HTTP API)"]
+  LBD["Lambda (Python)"]
 
-    U --> CF
-    CF --> S3
-    U --> APIGW --> LBD
+  U --> CF
+  CF --> S3
+  U --> APIGW --> LBD
+
 
 
 
