@@ -98,3 +98,9 @@ resource "aws_lambda_permission" "allow_apigw" {
 output "api_invoke_url" {
   value = aws_apigatewayv2_stage.prod.invoke_url
 }
+
+# Manage Lambda log group retention
+resource "aws_cloudwatch_log_group" "lambda" {
+  name              = "/aws/lambda/${var.project_name}-hello"
+  retention_in_days = 7
+}

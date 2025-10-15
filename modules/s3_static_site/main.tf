@@ -1,59 +1,93 @@
-variable "project_name" {}
-variable "index_html_path" {}
-variable "region" { default = "ap-northeast-1" }
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+}
 
-data "aws_caller_identity" "current" {}
+locals {
+  tags = {
+    Project = var.project_name
+  }
+}
 
+# --- S3 バケット（静的サイトのオリジン） ---
 resource "aws_s3_bucket" "site" {
-  bucket = "${var.project_name}-static-${data.aws_caller_identity.current.account_id}"
+  bucket        = var.bucket_name
+  force_destroy = true
+  tags          = local.tags
 }
 
-resource "aws_s3_bucket_ownership_controls" "site" {
-  bucket = aws_s3_bucket.site.id
-  rule { object_ownership = "BucketOwnerEnforced" }
-}
-
+# バケットの公開ブロック（全公開はせず、CloudFront経由のみ）
 resource "aws_s3_bucket_public_access_block" "site" {
   bucket                  = aws_s3_bucket.site.id
   block_public_acls       = true
   block_public_policy     = true
-  ignore_public_acls      = true
   restrict_public_buckets = true
+  ignore_public_acls      = true
 }
 
+# index.html をアップロード
 resource "aws_s3_object" "index" {
   bucket       = aws_s3_bucket.site.id
   key          = "index.html"
   source       = var.index_html_path
   content_type = "text/html"
+  etag         = filemd5(var.index_html_path)
 }
 
-resource "aws_cloudfront_origin_access_control" "oac" {
-  name                              = "${var.project_name}-oac"
-  origin_access_control_origin_type = "s3"
-  signing_behavior                  = "always"
-  signing_protocol                  = "sigv4"
+# --- CloudFront（OAI を使う簡単版） ---
+resource "aws_cloudfront_origin_access_identity" "oai" {
+  comment = "${var.project_name}-oai"
 }
 
-resource "aws_cloudfront_distribution" "site" {
+# S3 を CloudFront からだけ読めるようにするバケットポリシー
+data "aws_iam_policy_document" "bucket_policy" {
+  statement {
+    actions   = ["s3:GetObject"]
+    resources = ["${aws_s3_bucket.site.arn}/*"]
+
+    principals {
+      type        = "AWS"
+      identifiers = [aws_cloudfront_origin_access_identity.oai.iam_arn]
+    }
+  }
+}
+
+resource "aws_s3_bucket_policy" "site" {
+  bucket = aws_s3_bucket.site.id
+  policy = data.aws_iam_policy_document.bucket_policy.json
+}
+
+# CloudFront ディストリビューション
+resource "aws_cloudfront_distribution" "cdn" {
   enabled             = true
-  is_ipv6_enabled     = true
+  comment             = var.project_name
   default_root_object = "index.html"
+  tags                = local.tags
 
   origin {
-    domain_name              = aws_s3_bucket.site.bucket_regional_domain_name
-    origin_id                = "s3-origin"
-    origin_access_control_id = aws_cloudfront_origin_access_control.oac.id
+    domain_name = aws_s3_bucket.site.bucket_regional_domain_name
+    origin_id   = "s3-${aws_s3_bucket.site.id}"
+
+    s3_origin_config {
+      origin_access_identity = aws_cloudfront_origin_access_identity.oai.cloudfront_access_identity_path
+    }
   }
 
   default_cache_behavior {
+    target_origin_id       = "s3-${aws_s3_bucket.site.id}"
+    viewer_protocol_policy = "redirect-to-https"
     allowed_methods        = ["GET", "HEAD"]
     cached_methods         = ["GET", "HEAD"]
-    target_origin_id       = "s3-origin"
-    viewer_protocol_policy = "redirect-to-https"
+
     forwarded_values {
       query_string = false
-      cookies { forward = "none" }
+      cookies {
+        forward = "none"
+      }
     }
   }
 
@@ -62,30 +96,9 @@ resource "aws_cloudfront_distribution" "site" {
       restriction_type = "none"
     }
   }
-  viewer_certificate { cloudfront_default_certificate = true }
-}
 
-data "aws_iam_policy_document" "site" {
-  statement {
-    actions   = ["s3:GetObject"]
-    resources = ["${aws_s3_bucket.site.arn}/*"]
-    principals {
-      type        = "Service"
-      identifiers = ["cloudfront.amazonaws.com"]
-    }
-    condition {
-      test     = "StringEquals"
-      variable = "AWS:SourceArn"
-      values   = [aws_cloudfront_distribution.site.arn]
-    }
+  viewer_certificate {
+    cloudfront_default_certificate = true
   }
 }
 
-resource "aws_s3_bucket_policy" "site" {
-  bucket = aws_s3_bucket.site.id
-  policy = data.aws_iam_policy_document.site.json
-}
-
-output "cloudfront_domain" {
-  value = aws_cloudfront_distribution.site.domain_name
-}
