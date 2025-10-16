@@ -13,9 +13,49 @@ jobs:
     runs-on: ubuntu-latest
     env:
       AWS_REGION: ap-northeast-1
+
     steps:
       - uses: actions/checkout@v4
 
+      # 1) Node を入れてフロントをビルド
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build frontend and stage to site/
+        run: |
+          set -euo pipefail
+          # フロントがある前提（例: app/frontend）
+          if [ -d app/frontend ]; then
+            pushd app/frontend
+            npm ci
+            # Vite/CRA/Next など、あなたのプロジェクトに合わせて
+            if npm run | grep -qE '^  build'; then
+              npm run build
+            elif npm run | grep -qE '^  export'; then
+              npm run export
+            else
+              echo "No build/export script found in package.json" >&2
+              exit 1
+            fi
+            popd
+
+            # 成果物を site/ へ集約
+            rm -rf site && mkdir -p site
+            # よくある3パターンに対応（存在するものだけコピー）
+            cp -R app/frontend/dist/*  site/ 2>/dev/null || true
+            cp -R app/frontend/build/* site/ 2>/dev/null || true
+            cp -R app/frontend/out/*   site/ 2>/dev/null || true
+          else
+            echo "app/frontend not found" >&2
+            exit 1
+          fi
+
+          # index.html が無ければ失敗（ここで落とすと原因が明確）
+          test -f site/index.html || { echo "site/index.html not found after build"; ls -la site || true; exit 1; }
+
+      # 2) AWS + Terraform（作業ディレクトリはリポジトリ直下を想定）
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
@@ -29,6 +69,12 @@ jobs:
 
       - name: Terraform init
         run: terraform init -input=false
+
+      - name: Terraform validate
+        run: terraform validate
+
+      - name: Terraform plan
+        run: terraform plan -no-color
 
       - name: Terraform apply
         run: terraform apply -auto-approve
