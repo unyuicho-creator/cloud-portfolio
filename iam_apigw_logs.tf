@@ -7,7 +7,7 @@ data "aws_iam_role" "github_actions" {
 resource "aws_iam_policy" "apigw_logs_delivery" {
   name        = "apigw-logs-delivery"
   description = "Permissions for API Gateway (v2) access log delivery to CloudWatch Logs"
-  policy      = jsonencode({
+  policy = jsonencode({
     Version = "2012-10-17",
     Statement = [{
       Sid    = "ApiGwAccessLogsDelivery",
