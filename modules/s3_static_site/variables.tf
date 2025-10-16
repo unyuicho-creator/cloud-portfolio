@@ -8,8 +8,8 @@ variable "bucket_name" {
   description = "S3 bucket name for the static site"
 }
 
-variable "index_html_path" {
+variable "site_dir" {
+  description = "静的サイトのビルド出力ディレクトリ（index.html を含む）"
   type        = string
-  description = "Local path to index.html to upload"
 }
 

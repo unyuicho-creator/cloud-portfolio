@@ -34,8 +34,8 @@ resource "aws_s3_object" "index" {
   bucket       = aws_s3_bucket.site.id
   key          = "index.html"
   content_type = "text/html"
-  source       = "${path.module}/site/index.html"
-  etag         = filemd5("${path.module}/site/index.html")
+  source       = "${var.site_dir}/index.html"
+  etag         = filemd5("${var.site_dir}/index.html")
 }
 
 # --- CloudFront（OAI を使う簡単版） ---

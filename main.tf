@@ -11,10 +11,10 @@ locals {
 }
 
 module "static_site" {
-  source          = "./modules/s3_static_site"
-  project_name    = local.project_name
-  index_html_path = "${path.root}/modules/s3_static_site/site/index.html"
-  bucket_name     = "tf-portfolio-static-${data.aws_caller_identity.current.account_id}"
+  source       = "./modules/s3_static_site"
+  project_name = local.project_name
+  site_dir     = "${path.root}/site"
+  bucket_name  = "tf-portfolio-static-${data.aws_caller_identity.current.account_id}"
 }
 
 
