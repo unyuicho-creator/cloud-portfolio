@@ -8,12 +8,13 @@ data "aws_caller_identity" "current" {}
 
 locals {
   project_name = "tf-portfolio" # 好きなプロジェクト名（小文字・英数・ハイフン）
+  site_dir     = "${path.root}/site"
 }
 
 module "static_site" {
   source       = "./modules/s3_static_site"
   project_name = local.project_name
-  site_dir     = var.site_dir
+  site_dir     = local.site_dir
   bucket_name  = "tf-portfolio-static-${data.aws_caller_identity.current.account_id}"
 }
 
