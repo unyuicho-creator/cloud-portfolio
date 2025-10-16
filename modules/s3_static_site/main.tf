@@ -11,6 +11,7 @@ locals {
   tags = {
     Project = var.project_name
   }
+  site_dir = "${path.root}/site"
 }
 
 # --- S3 バケット（静的サイトのオリジン） ---

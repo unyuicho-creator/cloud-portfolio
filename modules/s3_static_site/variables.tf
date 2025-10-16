@@ -9,7 +9,6 @@ variable "bucket_name" {
 }
 
 variable "site_dir" {
-  description = "静的サイトのビルド出力ディレクトリ（index.html を含む）"
-  type        = string
+  type = string
 }
 
